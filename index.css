@@ -9,7 +9,7 @@ html, body {
   height: 100vh;
   margin: 0px;
   padding: 0px;
-  background-color: #000000;
+  background-color: #5c5c5c;
   color: #0b2636;
 }
 
@@ -19,4 +19,8 @@ html, body {
   position: absolute;
   top: 0px;
   left: 0px;
+}
+
+.world_map {
+  display: none;
 }
