@@ -39,14 +39,9 @@ export default class Globe {
   async createGeometry() {
 
     this.baseSphere   = new THREE.SphereGeometry(20, 50, 50);
-    // this.baseMaterial = new THREE.MeshBasicMaterial({
-    //   color: 0x0b2636,
-    //   transparent: true,
-    //   map: new THREE.TextureLoader().load(earthTexture)
-    // });
     this.baseMaterial = new THREE.MeshBasicMaterial({color: 0x0b2636, transparent: true, opacity: 1});
     this.baseMesh     = new THREE.Mesh(this.baseSphere, this.baseMaterial);
-    // this.scene.add(this.baseMesh);
+    this.scene.add(this.baseMesh);
 
     this.image              = document.querySelector('.world_map');
     this.image.needsUpdate  = true;
