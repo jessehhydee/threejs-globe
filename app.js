@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import vertex from './shaders/vertex.glsl'
 import fragment from './shaders/fragment.glsl'
+import gsap from 'gsap'
 
 export default class Globe {
 
@@ -31,20 +33,23 @@ export default class Globe {
     this.time = 0;
     this.materials = [];
     this.material = new THREE.ShaderMaterial({
+      side: THREE.DoubleSide,
       uniforms: {
-        u_time: { value: 1.0 }
+        u_time: { value: 1.0 },
+        u_maxExtrusion: { value: 1.0 }
       },
+      vertexShader:   vertex,
       fragmentShader: fragment,
     });
 
     this.createGeometry();
     this.resize();
-    this.listenToResize();
+    this.listenTo();
     this.render();
 
   }
 
-  createMaterial(timeValue = 1.0) {
+  createMaterial(timeValue) {
 
     const mat = this.material.clone();
     mat.uniforms.u_time.value = timeValue;
@@ -56,9 +61,10 @@ export default class Globe {
   async createGeometry() {
 
     this.baseSphere   = new THREE.SphereGeometry(19.5, 50, 50);
-    this.baseMaterial = new THREE.MeshBasicMaterial({color: 0x0b2636, transparent: true, opacity: 1});
+    this.baseMaterial = new THREE.MeshBasicMaterial({color: 0x0b2636, transparent: true, opacity: 0.95});
     this.baseMesh     = new THREE.Mesh(this.baseSphere, this.baseMaterial);
     this.scene.add(this.baseMesh);
+    
 
     this.image              = document.querySelector('.world_map');
     this.image.needsUpdate  = true;
@@ -67,10 +73,10 @@ export default class Globe {
     this.imageCanvas.width  = this.image.width;
     this.imageCanvas.height = this.image.height;
       
-    let context = this.imageCanvas.getContext('2d');
-    context.drawImage(this.image, 0, 0);
+    this.context = this.imageCanvas.getContext('2d');
+    this.context.drawImage(this.image, 0, 0);
       
-    this.imageData = context.getImageData(0, 0, this.imageCanvas.width, this.imageCanvas.height);
+    this.imageData = this.context.getImageData(0, 0, this.imageCanvas.width, this.imageCanvas.height);
 
     this.dotSphereRadius  = 20;
     this.vector           = new THREE.Vector3();
@@ -84,12 +90,12 @@ export default class Globe {
 
         this.vector = this.calcPosFromLatLonRad(lon, lat);
 
-        this.dotGeometry  = new THREE.CircleGeometry(0.2, 5);
+        this.dotGeometry = new THREE.CircleGeometry(0.1, 5);
         this.dotGeometry.lookAt(this.vector);
         this.dotGeometry.translate(this.vector.x, this.vector.y, this.vector.z);
 
-        const m = this.createMaterial(i / 4);
-        this.mesh         = new THREE.Mesh(this.dotGeometry, m);
+        const m   = this.createMaterial(i / 4);
+        this.mesh = new THREE.Mesh(this.dotGeometry, m);
 
         this.scene.add(this.mesh);
         
@@ -109,7 +115,7 @@ export default class Globe {
     var phi   = (90 - lat) * (Math.PI / 180);
     var theta = (lon + 180) * (Math.PI / 180);
 
-    const x = -(this.dotSphereRadius * Math.sin(phi) * Math.cos(theta));
+    const x = -(this.dotSphereRadius* Math.sin(phi) * Math.cos(theta));
     const z = (this.dotSphereRadius * Math.sin(phi) * Math.sin(theta));
     const y = (this.dotSphereRadius * Math.cos(phi));
   
@@ -131,9 +137,28 @@ export default class Globe {
 
   }
 
-  listenToResize() {
+  mousedown() {
+
+    this.materials.forEach(el => {
+      gsap.to(el.uniforms.u_maxExtrusion, {value: 1.2, duration: 2});
+    });
+
+  }
+
+  mouseup() {
+
+    this.materials.forEach(el => {
+      gsap.to(el.uniforms.u_maxExtrusion, {value: 1.0, duration: 1});
+    });
+
+  }
+
+  
+  listenTo() {
 
     window.addEventListener('resize', this.resize.bind(this));
+    window.addEventListener('mousedown', this.mousedown.bind(this));
+    window.addEventListener('mouseup', this.mouseup.bind(this));
 
   }
 
