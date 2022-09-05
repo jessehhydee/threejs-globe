@@ -30,10 +30,10 @@ export default class Globe {
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
-    this.time = 0;
-    this.materials = [];
-    this.material = new THREE.ShaderMaterial({
-      side: THREE.DoubleSide,
+    this.time       = 0;
+    this.materials  = [];
+    this.material   = new THREE.ShaderMaterial({
+      side:     THREE.DoubleSide,
       uniforms: {
         u_time: { value: 1.0 },
         u_maxExtrusion: { value: 1.0 }
@@ -51,7 +51,7 @@ export default class Globe {
 
   createMaterial(timeValue) {
 
-    const mat = this.material.clone();
+    const mat                 = this.material.clone();
     mat.uniforms.u_time.value = timeValue;
     this.materials.push(mat);
     return mat;
@@ -86,6 +86,7 @@ export default class Globe {
       const red   = this.imageData.data[i];
       const green = this.imageData.data[i + 1];
       const blue  = this.imageData.data[i + 2];
+
       if(red > 100 && green > 100 && blue > 100) {
 
         this.vector = this.calcPosFromLatLonRad(lon, lat);
@@ -102,8 +103,8 @@ export default class Globe {
       }
 
       if(lon === 180) {
-        lon = -180;
-        lat -= 2;
+        lon  =  -180;
+        lat -=  2;
       }
 
     }
@@ -126,11 +127,11 @@ export default class Globe {
   resize() {
 
     this.sizes = {
-      width: this.container.offsetWidth,
+      width:  this.container.offsetWidth,
       height: this.container.offsetHeight
     }
   
-    this.camera.aspect  = this.sizes.width / this.sizes.height;
+    this.camera.aspect = this.sizes.width / this.sizes.height;
     this.camera.updateProjectionMatrix();
 
     this.renderer.setSize(this.sizes.width, this.sizes.height);
@@ -140,7 +141,7 @@ export default class Globe {
   mousedown() {
 
     this.materials.forEach(el => {
-      gsap.to(el.uniforms.u_maxExtrusion, {value: 1.2, duration: 2});
+      gsap.to(el.uniforms.u_maxExtrusion, {value: 1.1});
     });
 
   }
@@ -153,12 +154,11 @@ export default class Globe {
 
   }
 
-  
   listenTo() {
 
-    window.addEventListener('resize', this.resize.bind(this));
-    window.addEventListener('mousedown', this.mousedown.bind(this));
-    window.addEventListener('mouseup', this.mouseup.bind(this));
+    window.addEventListener('resize',     this.resize.bind(this));
+    window.addEventListener('mousedown',  this.mousedown.bind(this));
+    window.addEventListener('mouseup',    this.mouseup.bind(this));
 
   }
 
