@@ -12,6 +12,5 @@ void main() {
   else newPosition.xyz = newPosition.xyz * u_maxExtrusion;
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4( newPosition, 1.0 );
-  // gl_Position = projectionMatrix * viewMatrix * vec4( position, 1.0 );
 
 }

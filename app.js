@@ -28,14 +28,23 @@ export default class Globe {
     });
     this.renderer.setPixelRatio(window.devicePixelRatio);
 
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls                 = new OrbitControls(this.camera, this.renderer.domElement);
+    // NEW CODE - Un tested
+    this.controls.autoRotate      = true;
+    this.controls.autoRotateSpeed = 2.0;
+    this.controls.enableDamping   = true;
+    this.controls.enablePan       = false;
+    this.controls.enableZoom      = false;
 
-    this.time       = 0;
-    this.materials  = [];
-    this.material   = new THREE.ShaderMaterial({
+    this.raycaster  = new THREE.Raycaster();
+    this.mouse      = new THREE.Vector2();
+
+    this.twinkleTime  = 0.2;
+    this.materials    = [];
+    this.material     = new THREE.ShaderMaterial({
       side:     THREE.DoubleSide,
       uniforms: {
-        u_time: { value: 1.0 },
+        u_time:         { value: 1.0 },
         u_maxExtrusion: { value: 1.0 }
       },
       vertexShader:   vertex,
@@ -116,7 +125,7 @@ export default class Globe {
     var phi   = (90 - lat) * (Math.PI / 180);
     var theta = (lon + 180) * (Math.PI / 180);
 
-    const x = -(this.dotSphereRadius* Math.sin(phi) * Math.cos(theta));
+    const x = -(this.dotSphereRadius * Math.sin(phi) * Math.cos(theta));
     const z = (this.dotSphereRadius * Math.sin(phi) * Math.sin(theta));
     const y = (this.dotSphereRadius * Math.cos(phi));
   
@@ -135,6 +144,24 @@ export default class Globe {
     this.camera.updateProjectionMatrix();
 
     this.renderer.setSize(this.sizes.width, this.sizes.height);
+
+  }
+
+  // NEW!!
+  mousemove(event) {
+
+    document.body.style.cursor = 'default';
+
+    this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+
+
+    this.intersects = this.raycaster.intersectObject(this.baseMesh);
+    if(this.intersects[0]) {
+      document.body.style.cursor = 'pointer';
+    }
 
   }
 
@@ -157,6 +184,7 @@ export default class Globe {
   listenTo() {
 
     window.addEventListener('resize',     this.resize.bind(this));
+    window.addEventListener('mousemove',  this.mousemove.bind(this));
     window.addEventListener('mousedown',  this.mousedown.bind(this));
     window.addEventListener('mouseup',    this.mouseup.bind(this));
 
@@ -164,11 +192,11 @@ export default class Globe {
 
   render() {
 
-    this.time += 0.005;
     this.materials.forEach(el => {
-      el.uniforms.u_time.value += this.time;
+      el.uniforms.u_time.value += this.twinkleTime;
     });
 
+    this.controls.update();
     this.renderer.render(this.scene, this.camera);
     requestAnimationFrame(this.render.bind(this))
 
