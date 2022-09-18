@@ -60,10 +60,6 @@ export default class Globe {
     this.listenTo();
     this.render();
 
-    setTimeout(() => {
-      console.log("Number of Triangles :", this.renderer.info.render.triangles);
-    }, 3000);
-
   }
 
   createMaterial(timeValue) {
