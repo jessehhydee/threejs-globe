@@ -23,21 +23,25 @@ export default class Globe {
     
     this.renderer = new THREE.WebGLRenderer({
       canvas:     this.canvas,
-      antialias:  true,
+      antialias:  false,
       alpha:      true
     });
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setPixelRatio(window.devicePixelRatio * 0.8);
 
     this.controls                 = new OrbitControls(this.camera, this.renderer.domElement);
-    // NEW CODE - Un tested
     this.controls.autoRotate      = true;
     this.controls.autoRotateSpeed = 2.0;
     this.controls.enableDamping   = true;
+    this.controls.enableRotate    = false;
     this.controls.enablePan       = false;
     this.controls.enableZoom      = false;
+    this.controls.minPolarAngle   = (Math.PI / 2) - 0.5;
+    this.controls.maxPolarAngle   = (Math.PI / 2) + 0.5;
 
-    this.raycaster  = new THREE.Raycaster();
-    this.mouse      = new THREE.Vector2();
+    this.raycaster      = new THREE.Raycaster();
+    this.mouse          = new THREE.Vector2();
+    this.cursor         = document.querySelector('.cursor');
+    this.isIntersecting = false;
 
     this.twinkleTime  = 0.2;
     this.materials    = [];
@@ -56,6 +60,10 @@ export default class Globe {
     this.listenTo();
     this.render();
 
+    setTimeout(() => {
+      console.log("Number of Triangles :", this.renderer.info.render.triangles);
+    }, 3000);
+
   }
 
   createMaterial(timeValue) {
@@ -69,53 +77,57 @@ export default class Globe {
 
   async createGeometry() {
 
-    this.baseSphere   = new THREE.SphereGeometry(19.5, 50, 50);
+    this.baseSphere   = new THREE.SphereGeometry(19.5, 28, 28);
     this.baseMaterial = new THREE.MeshBasicMaterial({color: 0x0b2636, transparent: true, opacity: 0.95});
     this.baseMesh     = new THREE.Mesh(this.baseSphere, this.baseMaterial);
     this.scene.add(this.baseMesh);
     
 
     this.image              = document.querySelector('.world_map');
-    this.image.needsUpdate  = true;
+    this.image.onload = () => {
 
-    this.imageCanvas        = document.createElement('canvas');
-    this.imageCanvas.width  = this.image.width;
-    this.imageCanvas.height = this.image.height;
-      
-    this.context = this.imageCanvas.getContext('2d');
-    this.context.drawImage(this.image, 0, 0);
-      
-    this.imageData = this.context.getImageData(0, 0, this.imageCanvas.width, this.imageCanvas.height);
+      this.image.needsUpdate  = true;
 
-    this.dotSphereRadius  = 20;
-    this.vector           = new THREE.Vector3();
-
-    for(let i = 0, lon = -180, lat = 90; i < this.imageData.data.length; i += 4, lon += 2) {
-
-      const red   = this.imageData.data[i];
-      const green = this.imageData.data[i + 1];
-      const blue  = this.imageData.data[i + 2];
-
-      if(red > 100 && green > 100 && blue > 100) {
-
-        this.vector = this.calcPosFromLatLonRad(lon, lat);
-
-        this.dotGeometry = new THREE.CircleGeometry(0.1, 5);
-        this.dotGeometry.lookAt(this.vector);
-        this.dotGeometry.translate(this.vector.x, this.vector.y, this.vector.z);
-
-        const m   = this.createMaterial(i / 4);
-        this.mesh = new THREE.Mesh(this.dotGeometry, m);
-
-        this.scene.add(this.mesh);
+      this.imageCanvas        = document.createElement('canvas');
+      this.imageCanvas.width  = this.image.width;
+      this.imageCanvas.height = this.image.height;
         
-      }
+      this.context = this.imageCanvas.getContext('2d');
+      this.context.drawImage(this.image, 0, 0);
+        
+      this.imageData = this.context.getImageData(0, 0, this.imageCanvas.width, this.imageCanvas.height);
 
-      if(lon === 180) {
-        lon  =  -180;
-        lat -=  2;
-      }
+      this.dotSphereRadius  = 20;
+      this.vector           = new THREE.Vector3();
 
+      for(let i = 0, lon = -180, lat = 90; i < this.imageData.data.length; i += 4, lon += 2) {
+
+        const red   = this.imageData.data[i];
+        const green = this.imageData.data[i + 1];
+        const blue  = this.imageData.data[i + 2];
+
+        if(red > 100 && green > 100 && blue > 100) {
+
+          this.vector = this.calcPosFromLatLonRad(lon, lat);
+
+          this.dotGeometry = new THREE.CircleGeometry(0.1, 5);
+          this.dotGeometry.lookAt(this.vector);
+          this.dotGeometry.translate(this.vector.x, this.vector.y, this.vector.z);
+
+          const m   = this.createMaterial(i / 4);
+          this.mesh = new THREE.Mesh(this.dotGeometry, m);
+
+          this.scene.add(this.mesh);
+          
+        }
+
+        if(lon === 180) {
+          lon  =  -180;
+          lat -=  2;
+        }
+
+      }
+      
     }
 
   }
@@ -147,33 +159,37 @@ export default class Globe {
 
   }
 
-  // NEW!!
   mousemove(event) {
 
-    document.body.style.cursor = 'default';
+    this.isIntersecting         = false;
+    this.controls.enableRotate  = false;
 
     this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
     this.mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
-
-
+    
     this.intersects = this.raycaster.intersectObject(this.baseMesh);
     if(this.intersects[0]) {
-      document.body.style.cursor = 'pointer';
+      this.isIntersecting         = true;
+      this.controls.enableRotate  = true;
     }
 
   }
 
   mousedown() {
 
+    if(!this.isIntersecting) return;
+
     this.materials.forEach(el => {
-      gsap.to(el.uniforms.u_maxExtrusion, {value: 1.1});
+      gsap.to(el.uniforms.u_maxExtrusion, {value: 1.07});
     });
 
   }
 
   mouseup() {
+
+    if(!this.isIntersecting) return;
 
     this.materials.forEach(el => {
       gsap.to(el.uniforms.u_maxExtrusion, {value: 1.0, duration: 1});
