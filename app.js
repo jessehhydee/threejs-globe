@@ -1,10 +1,46 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import vertex from './shaders/vertex.glsl'
-import fragment from './shaders/fragment.glsl'
-import gsap from 'gsap'
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 export default class Globe {
+
+  vertex = `
+    #ifdef GL_ES
+    precision mediump float;
+    #endif
+
+    uniform float u_time;
+    uniform float u_maxExtrusion;
+
+    void main() {
+
+      vec3 newPosition = position;
+      if(u_maxExtrusion > 1.0) newPosition.xyz = newPosition.xyz * u_maxExtrusion + sin(u_time);
+      else newPosition.xyz = newPosition.xyz * u_maxExtrusion;
+
+      gl_Position = projectionMatrix * modelViewMatrix * vec4( newPosition, 1.0 );
+
+    }
+  `;
+  fragment = `
+    #ifdef GL_ES
+    precision mediump float;
+    #endif
+
+    uniform float u_time;
+
+    vec3 colorA = vec3(0.196, 0.631, 0.886);
+    vec3 colorB = vec3(0.192, 0.384, 0.498);
+
+    void main() {
+
+      vec3  color = vec3(0.0);
+      float pct   = abs(sin(u_time));
+            color = mix(colorA, colorB, pct);
+
+      gl_FragColor = vec4(color, 1.0);
+
+    }
+  `;
 
   constructor(options) {
 
@@ -23,10 +59,14 @@ export default class Globe {
     
     this.renderer = new THREE.WebGLRenderer({
       canvas:     this.canvas,
-      antialias:  false,
-      alpha:      true
+      antialias:  false
     });
-    this.renderer.setPixelRatio(window.devicePixelRatio * 0.8);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const pointLight = new THREE.PointLight(0x081b26, 17, 200);
+    pointLight.position.set(-50, 0, 60);
+    this.scene.add(pointLight);
+    this.scene.add(new THREE.HemisphereLight(0xffffbb, 0x080820, 1.5));
 
     this.controls                 = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.autoRotate      = true;
@@ -51,8 +91,8 @@ export default class Globe {
         u_time:         { value: 1.0 },
         u_maxExtrusion: { value: 1.0 }
       },
-      vertexShader:   vertex,
-      fragmentShader: fragment,
+      vertexShader:   this.vertex,
+      fragmentShader: this.fragment,
     });
 
     this.createGeometry();
@@ -74,12 +114,11 @@ export default class Globe {
   async createGeometry() {
 
     this.baseSphere   = new THREE.SphereGeometry(19.5, 28, 28);
-    this.baseMaterial = new THREE.MeshBasicMaterial({color: 0x0b2636, transparent: true, opacity: 0.95});
+    this.baseMaterial = new THREE.MeshStandardMaterial({color: 0x0b2636, transparent: true, opacity: 0.95});
     this.baseMesh     = new THREE.Mesh(this.baseSphere, this.baseMaterial);
     this.scene.add(this.baseMesh);
     
-
-    this.image              = document.querySelector('.world_map');
+    this.image = new Image;
     this.image.onload = () => {
 
       this.image.needsUpdate  = true;
@@ -125,6 +164,8 @@ export default class Globe {
       }
       
     }
+
+    this.image.src = 'img/world_alpha_mini.jpg';
 
   }
 
