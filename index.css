@@ -9,7 +9,9 @@ html, body {
   height: 100vh;
   margin: 0px;
   padding: 0px;
-  background-color: #000000;
+  background: #0f2027;
+  background: -webkit-linear-gradient(to top, #0f2027, #203a43, #2c5364);
+  background: linear-gradient(to top, #0f2027, #203a43, #2c5364);
   color: rgb(49, 98, 127);
 }
 
@@ -21,6 +23,17 @@ html, body {
   left: 0px;
 }
 
-.world_map {
-  display: none;
+.source_btn {
+  position: absolute;
+  bottom: 30px;
+  right: 30px;
+  z-index: 10;
+  width: fit-content;
+  height: fit-content;
+  border-radius: 50px;
+  display: flex;
+  border: 1px solid #FFFFFF;
+  cursor: pointer;
+  background: inherit;
+  padding: 10px;
 }
