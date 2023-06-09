@@ -98,14 +98,15 @@ const setScene = () => {
 const setControls = () => {
 
   controls                 = new OrbitControls(camera, renderer.domElement);
-  controls.autoRotate      = true;
+  // controls.autoRotate      = true;
+  controls.autoRotate      = false;
   controls.autoRotateSpeed = 2.0;
   controls.enableDamping   = true;
   controls.enableRotate    = true;
   controls.enablePan       = false;
   controls.enableZoom      = false;
-  controls.minPolarAngle   = (Math.PI / 2) - 0.5;
-  controls.maxPolarAngle   = (Math.PI / 2) + 0.5;
+  // controls.minPolarAngle   = (Math.PI / 2) - 0.5;
+  // controls.maxPolarAngle   = (Math.PI / 2) + 0.5;
 
 };
 
@@ -124,7 +125,7 @@ const setBaseSphere = () => {
 
 const setShaderMaterial = () => {
 
-  twinkleTime  = 0.2;
+  twinkleTime  = 0.1;
   materials    = [];
   material     = new THREE.ShaderMaterial({
     side: THREE.DoubleSide,
@@ -178,7 +179,39 @@ const setMap = () => {
 
     let vector = new THREE.Vector3();
 
-    for(let i = 0, lon = -180, lat = 90; i < imageData.data.length; i += 4, lon += 2) {
+    let dotsPerLat = 0;
+    const lats = [];
+    const dotCount = 42000;
+    
+    for (let i = 0; i < dotCount; i++) {
+      const phi = Math.acos(-1 + (2 * i) / dotCount);
+      const theta = Math.sqrt(dotCount * Math.PI) * phi;
+
+      vector.setFromSphericalCoords(20, phi, theta);
+      let dotGeometry;
+      if(vector.x > -0.172 && vector.x < 0.172 && vector.z > 0) {
+        lats.push(dotsPerLat);
+        dotsPerLat = 0;
+        // dotGeometry = new THREE.CircleGeometry(0.2, 5);
+      }
+      // else dotGeometry = new THREE.CircleGeometry(0.1, 5);
+      // dotGeometry.lookAt(vector);
+      // dotGeometry.translate(vector.x, vector.y, vector.z);
+
+      // const m     = createMaterial(i / 4);
+      // const mesh  = new THREE.Mesh(dotGeometry, m);
+
+      // scene.add(mesh);
+      dotsPerLat++;
+    }
+
+    console.log('lats:', lats);
+
+    const imageLats = [];
+
+    for(let i = 0, lon = -180, lat = 90, imageLatsIndex = 0; i < imageData.data.length; i += 4, lon += 2) {
+
+      if(!imageLats[imageLatsIndex]) imageLats[imageLatsIndex] = [];
 
       const red   = imageData.data[i];
       const green = imageData.data[i + 1];
@@ -186,25 +219,141 @@ const setMap = () => {
 
       if(red > 100 && green > 100 && blue > 100) {
 
-        vector = calcPosFromLatLonRad(lon, lat);
+        // vector = calcPosFromLatLonRad(lon, lat);
+        // const phi = Math.acos(-1 + (2 * e) / (imageData.data.length / 4));
+        // const theta = Math.sqrt((imageData.data.length / 4) * Math.PI) * phi;
+        // vector.setFromSphericalCoords(20, phi, theta);
+        
+        // const dotGeometry = new THREE.CircleGeometry(0.1, 5);
+        // dotGeometry.lookAt(vector);
+        // dotGeometry.translate(vector.x, vector.y, vector.z);
 
-        const dotGeometry = new THREE.CircleGeometry(0.1, 5);
-        dotGeometry.lookAt(vector);
-        dotGeometry.translate(vector.x, vector.y, vector.z);
+        // const m     = createMaterial(i / 4);
+        // const mesh  = new THREE.Mesh(dotGeometry, m);
 
-        const m     = createMaterial(i / 4);
-        const mesh  = new THREE.Mesh(dotGeometry, m);
+        // scene.add(mesh);
+        // dotsPerLat++;
 
-        scene.add(mesh);
+        imageLats[imageLatsIndex].push(1);
+        imageLats[imageLatsIndex].push(1);
+        imageLats[imageLatsIndex].push(1);
         
       }
+      else {
+        imageLats[imageLatsIndex].push(0);
+        imageLats[imageLatsIndex].push(0);
+        imageLats[imageLatsIndex].push(0);
+      }
 
+      // if(lat === 90) console.log('e');
       if(lon === 180) {
         lon  =  -180;
         lat -=  2;
+        imageLatsIndex++;
+        imageLats[imageLatsIndex] = imageLats[imageLatsIndex - 1];
+        imageLatsIndex++;
       }
 
     }
+
+    console.log('imageLats:', imageLats);
+
+    let dot = dotCount;
+    for(let i = 0; i < lats.length; i++) {
+
+      const imageLat = imageLats[i] ? imageLats[i] : imageLats[0];
+      const chunk = Math.floor(imageLat.length / lats[i]);
+      console.log(chunk);
+      let start = 0;
+
+      for(let e = 0; e < lats[i]; e++) {
+        dot--;
+        let numOfPositive = 0;
+        let numOfNegative = 0;
+
+        for(let o = 0; o < chunk; o++) {
+          if(imageLat[start + o] === 1) numOfPositive++;
+          else numOfNegative++;
+        }
+
+        start += chunk;
+        if(numOfPositive >= numOfNegative) {
+          const phi = Math.acos(-1 + (2 * dot) / dotCount);
+          const theta = Math.sqrt(dotCount * Math.PI) * phi;
+
+          vector.setFromSphericalCoords(20, phi, theta);
+          
+          const dotGeometry = new THREE.CircleGeometry(0.1, 5);
+          dotGeometry.lookAt(vector);
+          dotGeometry.translate(vector.x, vector.y, vector.z);
+
+          const m     = createMaterial(dot / 4);
+          const mesh  = new THREE.Mesh(dotGeometry, m);
+
+          scene.add(mesh);
+        }
+      }
+
+    }
+    // for(let i = 0; i < lats.length; i++) {
+
+    //   const temp = [];
+    //   const imageLat = imageLats[i] ? imageLats[i] : imageLats[0];
+    //   const chunks = Math.floor(imageLat.length / lats[i]);
+    //   console.log(chunks);
+    //   let previousChuckEnd = 0;
+
+    //   for(let e = 0; e < chunks; e++) {
+    //     const currentChunkEnd = previousChuckEnd + chunks;
+    //     temp.push(imageLat.slice(previousChuckEnd, currentChunkEnd));
+    //     previousChuckEnd = currentChunkEnd;
+    //   }
+
+    //   console.log(temp);
+    //   for(let o = 0; o < temp.length; o++) {
+    //     dot++;
+    //     let numOfPositive = 0;
+    //     let numOfNegative = 0;
+    //     for(let u = 0; u < temp[o].length; u++) {
+    //       if(temp[o][u] === 1) numOfPositive++;
+    //       else numOfNegative++;
+    //     }
+
+    //     if(numOfPositive >= numOfNegative) {
+    //       const phi = Math.acos(-1 + (2 * dot) / dotCount);
+    //       const theta = Math.sqrt(dotCount * Math.PI) * phi;
+
+    //       vector.setFromSphericalCoords(20, phi, theta);
+          
+    //       const dotGeometry = new THREE.CircleGeometry(0.1, 5);
+    //       dotGeometry.lookAt(vector);
+    //       dotGeometry.translate(vector.x, vector.y, vector.z);
+
+    //       const m     = createMaterial(dot / 4);
+    //       const mesh  = new THREE.Mesh(dotGeometry, m);
+
+    //       scene.add(mesh);
+    //     }
+    //   }
+
+    // }
+
+    // for(let i = 0; i < dotCount; i++) {
+    //   const phi = Math.acos(-1 + (2 * i) / dotCount);
+    //   const theta = Math.sqrt(dotCount * Math.PI) * phi;
+
+    //   vector.setFromSphericalCoords(20, phi, theta);
+      
+    //   const dotGeometry = new THREE.CircleGeometry(0.1, 5);
+    //   dotGeometry.lookAt(vector);
+    //   dotGeometry.translate(vector.x, vector.y, vector.z);
+
+    //   const m     = createMaterial(i / 4);
+    //   const mesh  = new THREE.Mesh(dotGeometry, m);
+
+    //   scene.add(mesh);
+    // }
+
     
   }
 
@@ -259,10 +408,8 @@ const mousedown = () => {
 
 const mouseup = () => {
 
-  if(!isIntersecting) return;
-
   materials.forEach(el => {
-    gsap.to(el.uniforms.u_maxExtrusion, {value: 1.0, duration: 1});
+    gsap.to(el.uniforms.u_maxExtrusion, {value: 1.0, duration: 0.3});
   });
 
 }
