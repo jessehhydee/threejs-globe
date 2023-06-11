@@ -124,7 +124,7 @@ const setBaseSphere = () => {
 
 const setShaderMaterial = () => {
 
-  twinkleTime  = 0.2;
+  twinkleTime  = 0.03;
   materials    = [];
   material     = new THREE.ShaderMaterial({
     side: THREE.DoubleSide,
@@ -139,6 +139,46 @@ const setShaderMaterial = () => {
 }
 
 const setMap = () => {
+
+  let activeLatLon = {};
+
+  const readImageData = (imageData) => {
+
+    for(let i = 0, lon = -180, lat = 90; i < imageData.length; i += 4, lon++) {
+
+      if(!activeLatLon[lat]) activeLatLon[lat] = [];
+
+      const red   = imageData[i];
+      const green = imageData[i + 1];
+      const blue  = imageData[i + 2];
+
+      if(red > 100 && green > 100 && blue > 100)
+        activeLatLon[lat].push(lon);
+
+      if(lon === 180) {
+        lon = -180;
+        lat--;
+      }
+
+    }
+
+  }
+
+  const visibilityForCoordinate = (lon, lat) => {
+
+    let visible = false;
+
+    if(!activeLatLon[lat].length) return visible;
+
+    const closest = activeLatLon[lat].reduce((prev, curr) => {
+      return (Math.abs(curr - lon) < Math.abs(prev - lon) ? curr : prev);
+    });
+
+    if(Math.abs(lon - closest) < 0.5) visible = true;
+
+    return visible;
+
+  }
 
   const calcPosFromLatLonRad = (lon, lat, radius = 20) => {
   
@@ -156,9 +196,43 @@ const setMap = () => {
   const createMaterial = (timeValue) => {
 
     const mat                 = material.clone();
-    mat.uniforms.u_time.value = timeValue;
+    mat.uniforms.u_time.value = timeValue * Math.sin(Math.random());
     materials.push(mat);
     return mat;
+
+  }
+
+  const setDots = () => {
+
+    const dotDensity  = 2.5;
+    let   vector      = new THREE.Vector3();
+
+    for (let lat = 90, i = 0; lat > -90; lat--, i++) {
+
+      const radius = Math.cos(Math.abs(lat) * (Math.PI / 180)) * 20;
+      const circumference = radius * Math.PI * 2;
+      const dotsForLat = circumference * dotDensity;
+
+      for (let x = 0; x < dotsForLat; x++) {
+
+        const long = -180 + x * 360 / dotsForLat;
+
+        if (!visibilityForCoordinate(long, lat)) continue;
+
+        vector = calcPosFromLatLonRad(long, lat);
+
+        const dotGeometry = new THREE.CircleGeometry(0.1, 5);
+        dotGeometry.lookAt(vector);
+        dotGeometry.translate(vector.x, vector.y, vector.z);
+
+        const m     = createMaterial(i);
+        const mesh  = new THREE.Mesh(dotGeometry, m);
+
+        scene.add(mesh);
+
+      }
+
+    }
 
   }
   
@@ -175,36 +249,9 @@ const setMap = () => {
     context.drawImage(image, 0, 0);
       
     const imageData = context.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
+    readImageData(imageData.data);
 
-    let vector = new THREE.Vector3();
-
-    for(let i = 0, lon = -180, lat = 90; i < imageData.data.length; i += 4, lon += 2) {
-
-      const red   = imageData.data[i];
-      const green = imageData.data[i + 1];
-      const blue  = imageData.data[i + 2];
-
-      if(red > 100 && green > 100 && blue > 100) {
-
-        vector = calcPosFromLatLonRad(lon, lat);
-
-        const dotGeometry = new THREE.CircleGeometry(0.1, 5);
-        dotGeometry.lookAt(vector);
-        dotGeometry.translate(vector.x, vector.y, vector.z);
-
-        const m     = createMaterial(i / 4);
-        const mesh  = new THREE.Mesh(dotGeometry, m);
-
-        scene.add(mesh);
-        
-      }
-
-      if(lon === 180) {
-        lon  =  -180;
-        lat -=  2;
-      }
-
-    }
+    setDots();
     
   }
 
@@ -258,8 +305,6 @@ const mousedown = () => {
 }
 
 const mouseup = () => {
-
-  if(!isIntersecting) return;
 
   materials.forEach(el => {
     gsap.to(el.uniforms.u_maxExtrusion, {value: 1.0, duration: 1});
