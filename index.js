@@ -56,6 +56,8 @@ twinkleTime,
 materials,
 material,
 baseMesh,
+minMouseDownFlag,
+mouseDown,
 grabbing;
 
 const setScene = () => {
@@ -82,10 +84,12 @@ const setScene = () => {
   scene.add(pointLight);
   scene.add(new THREE.HemisphereLight(0xffffbb, 0x080820, 1.5));
 
-  raycaster      = new THREE.Raycaster();
-  mouse          = new THREE.Vector2();
-  isIntersecting = false;
-  grabbing       = false;
+  raycaster         = new THREE.Raycaster();
+  mouse             = new THREE.Vector2();
+  isIntersecting    = false;
+  minMouseDownFlag  = false;
+  mouseDown         = false;
+  grabbing          = false;
 
   setControls();
   setBaseSphere();
@@ -306,6 +310,14 @@ const mousedown = () => {
     gsap.to(el.uniforms.u_maxExtrusion, {value: 1.07});
   });
 
+  mouseDown         = true;
+  minMouseDownFlag  = false;
+
+  setTimeout(() => {
+    minMouseDownFlag = true;
+    if(!mouseDown) mouseup();
+  }, 500);
+
   document.body.style.cursor  = 'grabbing';
   grabbing                    = true;
 
@@ -313,11 +325,14 @@ const mousedown = () => {
 
 const mouseup = () => {
 
+  mouseDown = false;
+  if(!minMouseDownFlag) return;
+
   materials.forEach(el => {
     gsap.to(el.uniforms.u_maxExtrusion, {value: 1.0, duration: 0.15});
   });
 
-  grabbing = false;
+  grabbing  = false;
   if(isIntersecting) document.body.style.cursor = 'pointer';
   else document.body.style.cursor = 'default';
 
