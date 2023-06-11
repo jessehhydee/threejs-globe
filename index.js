@@ -314,7 +314,7 @@ const mousedown = () => {
 const mouseup = () => {
 
   materials.forEach(el => {
-    gsap.to(el.uniforms.u_maxExtrusion, {value: 1.0, duration: 1});
+    gsap.to(el.uniforms.u_maxExtrusion, {value: 1.0, duration: 0.15});
   });
 
   grabbing = false;
