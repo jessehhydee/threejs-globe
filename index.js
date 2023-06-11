@@ -55,7 +55,8 @@ isIntersecting,
 twinkleTime,
 materials,
 material,
-baseMesh;
+baseMesh,
+grabbing;
 
 const setScene = () => {
 
@@ -84,6 +85,7 @@ const setScene = () => {
   raycaster      = new THREE.Raycaster();
   mouse          = new THREE.Vector2();
   isIntersecting = false;
+  grabbing       = false;
 
   setControls();
   setBaseSphere();
@@ -115,7 +117,7 @@ const setBaseSphere = () => {
   const baseMaterial = new THREE.MeshStandardMaterial({
     color:        0x0b2636, 
     transparent:  true, 
-    opacity:      0.95
+    opacity:      0.9
   });
   baseMesh = new THREE.Mesh(baseSphere, baseMaterial);
   scene.add(baseMesh);
@@ -288,9 +290,11 @@ const mousemove = (event) => {
   const intersects = raycaster.intersectObject(baseMesh);
   if(intersects[0]) {
     isIntersecting = true;
-    document.body.style.cursor = 'pointer';
+    if(!grabbing) document.body.style.cursor = 'pointer';
   }
-  else document.body.style.cursor = 'default';
+  else {
+    if(!grabbing) document.body.style.cursor = 'default';
+  }
 
 }
 
@@ -302,6 +306,9 @@ const mousedown = () => {
     gsap.to(el.uniforms.u_maxExtrusion, {value: 1.07});
   });
 
+  document.body.style.cursor  = 'grabbing';
+  grabbing                    = true;
+
 }
 
 const mouseup = () => {
@@ -309,6 +316,10 @@ const mouseup = () => {
   materials.forEach(el => {
     gsap.to(el.uniforms.u_maxExtrusion, {value: 1.0, duration: 1});
   });
+
+  grabbing = false;
+  if(isIntersecting) document.body.style.cursor = 'pointer';
+  else document.body.style.cursor = 'default';
 
 }
 
