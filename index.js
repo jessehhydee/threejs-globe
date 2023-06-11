@@ -105,7 +105,7 @@ const setControls = () => {
 
   controls                 = new OrbitControls(camera, renderer.domElement);
   controls.autoRotate      = true;
-  controls.autoRotateSpeed = 2.0;
+  controls.autoRotateSpeed = 1.2;
   controls.enableDamping   = true;
   controls.enableRotate    = true;
   controls.enablePan       = false;
@@ -146,7 +146,8 @@ const setShaderMaterial = () => {
 
 const setMap = () => {
 
-  let activeLatLon = {};
+  let   activeLatLon    = {};
+  const dotSphereRadius = 20;
 
   const readImageData = (imageData) => {
 
@@ -186,14 +187,14 @@ const setMap = () => {
 
   }
 
-  const calcPosFromLatLonRad = (lon, lat, radius = 20) => {
+  const calcPosFromLatLonRad = (lon, lat) => {
   
     var phi   = (90 - lat)  * (Math.PI / 180);
     var theta = (lon + 180) * (Math.PI / 180);
 
-    const x = -(radius * Math.sin(phi) * Math.cos(theta));
-    const z = (radius * Math.sin(phi) * Math.sin(theta));
-    const y = (radius * Math.cos(phi));
+    const x = -(dotSphereRadius * Math.sin(phi) * Math.cos(theta));
+    const z = (dotSphereRadius * Math.sin(phi) * Math.sin(theta));
+    const y = (dotSphereRadius * Math.cos(phi));
   
     return new THREE.Vector3(x, y, z);
 
@@ -215,7 +216,7 @@ const setMap = () => {
 
     for (let lat = 90, i = 0; lat > -90; lat--, i++) {
 
-      const radius = Math.cos(Math.abs(lat) * (Math.PI / 180)) * 20;
+      const radius = Math.cos(Math.abs(lat) * (Math.PI / 180)) * dotSphereRadius;
       const circumference = radius * Math.PI * 2;
       const dotsForLat = circumference * dotDensity;
 
