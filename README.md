@@ -2,9 +2,9 @@
 
 This is inspired by Github & Stripes webgl globes.
 
-The dots clustered togeather resembling continents are achieved by reading an image of the world.
+The dots clustered together resembling continents are achieved by reading an image of the world.
 Getting the image data for each pixel and iterating over each pixel.
-If the pixels r,g,b values exceeed 100, display dot.
+If the pixels r,g,b values exceed 100, display dot.
 The position of the dot is worked out by determining the lat and long position of the pixel.
 
 Each dot within the canvas independently changes colour to give off a twinkling effect.
