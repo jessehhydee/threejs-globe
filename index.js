@@ -69,8 +69,13 @@ const setScene = () => {
 
   scene = new THREE.Scene();
 
-  camera             = new THREE.PerspectiveCamera(30, sizes.width / sizes.height, 1, 1000);
-  camera.position.z  = 100;
+  camera = new THREE.PerspectiveCamera(
+    30, 
+    sizes.width / sizes.height, 
+    1, 
+    1000
+  );
+  camera.position.z = 100;
   
   renderer = new THREE.WebGLRenderer({
     canvas:     canvas,
@@ -151,7 +156,11 @@ const setMap = () => {
 
   const readImageData = (imageData) => {
 
-    for(let i = 0, lon = -180, lat = 90; i < imageData.length; i += 4, lon++) {
+    for(
+      let i = 0, lon = -180, lat = 90; 
+      i < imageData.length; 
+      i += 4, lon++
+    ) {
 
       if(!activeLatLon[lat]) activeLatLon[lat] = [];
 
@@ -216,7 +225,8 @@ const setMap = () => {
 
     for (let lat = 90, i = 0; lat > -90; lat--, i++) {
 
-      const radius = Math.cos(Math.abs(lat) * (Math.PI / 180)) * dotSphereRadius;
+      const radius = 
+        Math.cos(Math.abs(lat) * (Math.PI / 180)) * dotSphereRadius;
       const circumference = radius * Math.PI * 2;
       const dotsForLat = circumference * dotDensity;
 
@@ -248,14 +258,19 @@ const setMap = () => {
 
     image.needsUpdate  = true;
 
-    const imageCanvas  =  document.createElement('canvas');
-    imageCanvas.width  =  image.width;
-    imageCanvas.height =  image.height;
+    const imageCanvas  = document.createElement('canvas');
+    imageCanvas.width  = image.width;
+    imageCanvas.height = image.height;
       
     const context = imageCanvas.getContext('2d');
     context.drawImage(image, 0, 0);
       
-    const imageData = context.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
+    const imageData = context.getImageData(
+      0, 
+      0, 
+      imageCanvas.width, 
+      imageCanvas.height
+    );
     readImageData(imageData.data);
 
     setDots();
@@ -308,7 +323,12 @@ const mousedown = () => {
   if(!isIntersecting) return;
 
   materials.forEach(el => {
-    gsap.to(el.uniforms.u_maxExtrusion, {value: 1.07});
+    gsap.to(
+      el.uniforms.u_maxExtrusion, 
+      {
+        value: 1.07
+      }
+    );
   });
 
   mouseDown         = true;
@@ -330,10 +350,16 @@ const mouseup = () => {
   if(!minMouseDownFlag) return;
 
   materials.forEach(el => {
-    gsap.to(el.uniforms.u_maxExtrusion, {value: 1.0, duration: 0.15});
+    gsap.to(
+      el.uniforms.u_maxExtrusion, 
+      {
+        value:    1.0, 
+        duration: 0.15
+      }
+    );
   });
 
-  grabbing  = false;
+  grabbing = false;
   if(isIntersecting) document.body.style.cursor = 'pointer';
   else document.body.style.cursor = 'default';
 
