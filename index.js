@@ -159,7 +159,7 @@ const setMap = () => {
       const green = imageData[i + 1];
       const blue  = imageData[i + 2];
 
-      if(red > 100 && green > 100 && blue > 100)
+      if(red < 80 && green < 80 && blue < 80)
         activeLatLon[lat].push(lon);
 
       if(lon === 180) {
